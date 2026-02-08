@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>烏衣巷筆劃練習-虛擬全螢幕版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&display=swap');
+
+        :root {
+            --primary-red: #9b2226;
+            --paper-bg: #fffcf2;
+            --grid-line: #fecdd3;
+        }
+
+        body {
+            background-color: var(--paper-bg);
+            font-family: 'Noto Serif TC', "KaiTi", "BiauKai", "標楷體", serif;
+            color: #2d3436;
+            overflow-x: hidden;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+
+        /* 詩詞直排容器 */
+        .exercise-paper {
+            background-color: #ffffff;
+            background-image: radial-gradient(var(--grid-line) 1.2px, transparent 1.2px);
+            background-size: 30px 30px;
+            border: 2px solid #f1f2f6;
+            height: auto;
+            min-height: 200px;
+        }
+
+        .poem-vertical-layout {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: center;
+            gap: 1.2rem;
+            padding: 1.5rem 1rem;
+        }
+
+        .poem-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            align-items: center;
+        }
+
+        .char-box {
+            background: transparent;
+            border: 1px solid transparent;
+            outline: none;
+            cursor: pointer;
+            width: 2.8rem;
+            height: 2.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .char-box.selected {
+            background-color: #fff;
+            border: 3px solid var(--primary-red);
+            border-radius: 8px;
+            color: var(--primary-red);
+            font-weight: 900;
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(155, 34, 38, 0.2);
+        }
+
+        /* 右側練習板外殼 */
+        .tablet-container {
+            background: #2d3436;
+            padding: 15px;
+            border-radius: 30px;
+            box-shadow: 0 40px 80px -15px rgba(0,0,0,0.5);
+            border: 6px solid #3d4446;
+            width: 100%;
+            max-width: 580px;
+            margin-top: 1rem;
+            position: relative;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* 虛擬全螢幕樣式 (不依賴瀏覽器權限) */
+        .is-virtual-fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: none !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            z-index: 9999 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border: none !important;
+        }
+
+        /* 全螢幕下的內部區域調整 */
+        .is-virtual-fullscreen .screen-area {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 500px; /* 限制寬度以免比例跑掉 */
+            max-height: 850px;
+            border-radius: 15px;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            top: -45px;
+            right: 10px;
+            background: #3d4446;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            z-index: 10000;
+        }
+
+        .is-virtual-fullscreen .fullscreen-btn {
+            top: 20px;
+            right: 20px;
+            background: var(--primary-red);
+        }
+
+        .screen-area {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            width: 450px; 
+            height: 780px; 
+            margin: 0 auto;
+        }
+
+        #stroke-iframe {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 300px;
+            height: 520px;
+            transform: translateX(-50%) scale(1.5);
+            transform-origin: top center; 
+            border: none;
+            margin-top: 20px; 
+        }
+
+        .char-indicator {
+            background: white;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border: 2px solid var(--primary-red);
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--primary-red);
+        }
+
+        @media (max-width: 640px) {
+            .poem-vertical-layout {
+                gap: 0.8rem;
+                padding: 1.5rem 0.5rem;
+            }
+            .char-box {
+                width: 2.4rem;
+                height: 2.4rem;
+                font-size: 1.5rem;
+            }
+            .screen-area {
+                width: 300px;
+                height: 520px;
+            }
+            #stroke-iframe {
+                transform: translateX(-50%) scale(1);
+                margin-top: 0;
+            }
+            .tablet-container {
+                max-width: 330px;
+                padding: 10px;
+                border-radius: 20px;
+            }
+            .is-virtual-fullscreen .screen-area {
+                width: 100% !important;
+                height: 100% !important;
+                max-width: none;
+                max-height: none;
+                border-radius: 0;
+            }
+            .sticky-mobile-reset {
+                position: static !important;
+            }
+        }
+    </style>
+</head>
+<body class="py-6 px-4">
+
+    <div class="w-full max-w-[1400px] mx-auto flex flex-col xl:flex-row gap-8 items-start justify-center">
+        
+        <!-- 左側：輔助選字區 -->
+        <div id="side-panel" class="w-full xl:w-[35%] flex flex-col gap-4 sticky top-10 sticky-mobile-reset">
+            <header class="flex items-end justify-between px-2">
+                <div>
+                    <h1 class="text-4xl md:text-5xl font-black text-slate-800 tracking-[0.2em]">烏衣巷</h1>
+                    <p class="text-slate-400 font-bold tracking-widest text-xs mt-1">劉禹錫 • 筆劃練習</p>
+                </div>
+                <div id="current-char-display" class="char-indicator">朱</div>
+            </header>
+
+            <div class="exercise-paper rounded-[2rem] shadow-lg">
+                <div id="poem-container" class="poem-vertical-layout">
+                    <!-- JS 生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：極大化練習板 -->
+        <div class="w-full xl:w-[65%] flex justify-center items-center pb-20">
+            <div id="target-tablet" class="tablet-container">
+                <!-- 修改：使用虛擬全螢幕切換 -->
+                <div id="fs-toggle-btn" class="fullscreen-btn" onclick="toggleVirtualFullscreen()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                    </svg>
+                    <span id="fs-btn-text">全螢幕練習</span>
+                </div>
+
+                <div class="screen-area">
+                    <iframe id="stroke-iframe" src="" allowfullscreen allow="fullscreen"></iframe>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const CHAR_ID_MAP = {
+            '烏': '28879', '衣': '34915', '巷': '24055', '劉': '21129', '禹': '31161', '錫': '37660',
+            '朱': '26417', '雀': '38592', '橋': '27211', '邊': '37002', '野': '37326', '草': '33609', '花': '33457',
+            '口': '21475', '夕': '22805', '陽': '38525', '斜': '26012',
+            '舊': '33290', '時': '26178', '王': '29579', '謝': '35613', '堂': '22530', '前': '21069', '燕': '29141',
+            '飛': '39131', '入': '20837', '尋': '23563', '常': '24120', '百': '30334', '姓': '22995', '家': '23478'
+        };
+
+        const POEM_DATA = {
+            content: ["朱雀橋邊野草花", "烏衣巷口夕陽斜", "舊時王謝堂前燕", "飛入尋常百姓家"]
+        };
+
+        // 虛擬全螢幕切換功能：繞過瀏覽器 Policy 限制
+        function toggleVirtualFullscreen() {
+            const tablet = document.getElementById('target-tablet');
+            const btnText = document.getElementById('fs-btn-text');
+            const isFS = tablet.classList.toggle('is-virtual-fullscreen');
+            
+            if (isFS) {
+                btnText.innerText = "退出全螢幕";
+                document.body.style.overflow = "hidden"; // 禁止捲動
+            } else {
+                btnText.innerText = "全螢幕練習";
+                document.body.style.overflow = "auto";
+            }
+        }
+
+        function updateIframe(char) {
+            const id = CHAR_ID_MAP[char];
+            if (!id) return;
+
+            const iframe = document.getElementById('stroke-iframe');
+            iframe.src = `https://stroke-order.learningweb.moe.edu.tw/dictFrame.jsp?ID=${id}`;
+            document.getElementById('current-char-display').innerText = char;
+            
+            document.querySelectorAll('.char-box').forEach(box => {
+                box.classList.toggle('selected', box.innerText === char);
+            });
+            
+            // 如果不是在全螢幕模式，才自動捲動
+            const isFS = document.getElementById('target-tablet').classList.contains('is-virtual-fullscreen');
+            if (window.innerWidth < 1280 && !isFS) {
+                document.querySelector('.tablet-container').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function init() {
+            const container = document.getElementById('poem-container');
+            
+            const authorCol = document.createElement('div');
+            authorCol.className = 'poem-column border-l-2 border-slate-100 pl-2 md:pl-4';
+            "劉禹錫".split('').forEach(a => {
+                const s = document.createElement('span');
+                s.className = 'text-[10px] md:text-xs font-bold text-slate-300';
+                s.innerText = a;
+                authorCol.appendChild(s);
+            });
+            container.appendChild(authorCol);
+
+            POEM_DATA.content.forEach((line, idx) => {
+                const colDiv = document.createElement('div');
+                colDiv.className = `poem-column ${idx !== 0 ? 'border-l border-rose-50' : ''} px-2 md:px-4`;
+                line.split('').forEach(char => {
+                    const btn = document.createElement('button');
+                    btn.className = 'char-box';
+                    btn.innerText = char;
+                    btn.onclick = () => updateIframe(char);
+                    colDiv.appendChild(btn);
+                });
+                container.appendChild(colDiv);
+            });
+
+            updateIframe('朱');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

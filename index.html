@@ -208,6 +208,23 @@
                 position: static !important;
             }
         }
+        
+        /* 複製提示小動畫 */
+        .copy-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3436;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 10001;
+        }
     </style>
 </head>
 <body class="py-6 px-4">
@@ -220,6 +237,9 @@
                 <div>
                     <h1 class="text-4xl md:text-5xl font-black text-slate-800 tracking-[0.2em]">烏衣巷</h1>
                     <p class="text-slate-400 font-bold tracking-widest text-xs mt-1">劉禹錫 • 筆劃練習</p>
+                    <button onclick="copyCurrentUrl()" class="mt-2 text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-600 px-2 py-1 rounded transition-colors">
+                        點此複製網址分享
+                    </button>
                 </div>
                 <div id="current-char-display" class="char-indicator">朱</div>
             </header>
@@ -234,7 +254,6 @@
         <!-- 右側：極大化練習板 -->
         <div class="w-full xl:w-[65%] flex justify-center items-center pb-20">
             <div id="target-tablet" class="tablet-container">
-                <!-- 修改：使用虛擬全螢幕切換 -->
                 <div id="fs-toggle-btn" class="fullscreen-btn" onclick="toggleVirtualFullscreen()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
@@ -247,8 +266,9 @@
                 </div>
             </div>
         </div>
-
     </div>
+
+    <div id="toast" class="copy-toast">網址已複製到剪貼簿！</div>
 
     <script>
         const CHAR_ID_MAP = {
@@ -263,7 +283,20 @@
             content: ["朱雀橋邊野草花", "烏衣巷口夕陽斜", "舊時王謝堂前燕", "飛入尋常百姓家"]
         };
 
-        // 虛擬全螢幕切換功能：繞過瀏覽器 Policy 限制
+        function copyCurrentUrl() {
+            const url = window.location.href;
+            const tempInput = document.createElement("input");
+            tempInput.value = url;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            
+            const toast = document.getElementById('toast');
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+        }
+
         function toggleVirtualFullscreen() {
             const tablet = document.getElementById('target-tablet');
             const btnText = document.getElementById('fs-btn-text');
@@ -271,7 +304,7 @@
             
             if (isFS) {
                 btnText.innerText = "退出全螢幕";
-                document.body.style.overflow = "hidden"; // 禁止捲動
+                document.body.style.overflow = "hidden";
             } else {
                 btnText.innerText = "全螢幕練習";
                 document.body.style.overflow = "auto";
@@ -290,7 +323,6 @@
                 box.classList.toggle('selected', box.innerText === char);
             });
             
-            // 如果不是在全螢幕模式，才自動捲動
             const isFS = document.getElementById('target-tablet').classList.contains('is-virtual-fullscreen');
             if (window.innerWidth < 1280 && !isFS) {
                 document.querySelector('.tablet-container').scrollIntoView({ behavior: 'smooth' });
